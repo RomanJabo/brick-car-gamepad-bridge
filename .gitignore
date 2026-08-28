@@ -1,0 +1,25 @@
+# Arduino CLI build output
+build/
+*.elf
+*.bin
+*.hex
+*.map
+
+# Editor and OS clutter
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+.DS_Store
+
+# Working notes for the AI assistant used during development.
+# Contains machine-specific paths and this vehicle's BLE address; the useful
+# parts are in docs/protocol.md instead.
+CLAUDE.md
+
+# Local safety copies made before larger surgery on the firmware.
+firmware.backup-*/
+
+# Local Windows build helpers. The FQBN they encode is documented in the
+# README instead, which is more use to anyone not on Windows.
+tools/

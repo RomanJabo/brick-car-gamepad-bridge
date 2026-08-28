@@ -1,0 +1,5 @@
+# Normalise line endings: LF in the repository, native in the checkout.
+* text=auto
+
+# PowerShell is happiest with CRLF on Windows.
+*.ps1 text eol=crlf
