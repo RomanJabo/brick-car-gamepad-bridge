@@ -8,9 +8,9 @@ der ESP32-C3 sitzt als Bluetooth-Brücke dazwischen.
 ---
 
 Der Move Hub aus Set 42176 (Porsche GT4 e-Performance) lässt sich ab Werk nur
-mit LEGOs Control+-App vom Handy steuern. Zum Vorführen taugt das, zum Fahren
-kaum: kein Gefühl für Gas, keine proportionale Lenkung, Touch-Flächen statt
-Trigger.
+mit der LEGO® Control+-App vom Handy steuern. Zum Vorführen taugt das, zum
+Fahren kaum: kein Gefühl für Gas, keine proportionale Lenkung, Touch-Flächen
+statt Trigger.
 
 Diese Firmware macht aus einem ESP32-C3 eine **BLE-Funkbrücke**. Sie hält
 gleichzeitig zwei Bluetooth-LE-Verbindungen als Client — eine zum Controller,
@@ -373,11 +373,16 @@ Dieses Projekt steht auf der Arbeit anderer:
 
 ## Marken
 
-LEGO® und Technic™ sind Marken der LEGO Gruppe, die dieses Projekt weder
-sponsert noch autorisiert noch unterstützt. Xbox® ist eine Marke der Microsoft
-Corporation, die es ebenso wenig sponsert, autorisiert oder unterstützt. Beide
-Namen werden hier ausschließlich zur Beschreibung der Kompatibilität verwendet.
+LEGO®, Technic™ und Control+ sind Marken der LEGO Gruppe, die dieses Projekt
+weder sponsert noch autorisiert noch unterstützt. Xbox® ist eine Marke der
+Microsoft Corporation, Porsche® eine Marke der Dr. Ing. h.c. F. Porsche AG —
+beide sponsern, autorisieren oder unterstützen es ebenso wenig. „Porsche GT4
+e-Performance" ist Teil des offiziellen Namens von LEGO Set 42176. Alle
+genannten Namen bezeichnen hier ausschließlich die Produkte, mit denen diese
+Brücke zusammenarbeitet.
 
 ## Lizenz
 
-[MIT](LICENSE).
+[MIT](LICENSE). Die Quellen und Bibliotheken, auf denen diese Firmware
+aufbaut, stehen mit ihren Lizenzhinweisen in
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
