@@ -185,6 +185,13 @@ Source for the mask format:
 [toorisrael/LEGO-Porsche-Controller](https://github.com/toorisrael/LEGO-Porsche-Controller)
 (command `getledmask`), confirmed by our own mode query.
 
+**A value written through the LED array wins against the light program**, for
+as long as it keeps being repeated. Confirmed on 2026-08-29 by the headlight
+flash: it blinks LEDs 2 and 3 at 200 ms per half-period over this path while
+the VM repaints the same lamps at 20 Hz, and the result is clean, with no
+flicker. 200 ms sits comfortably above `LED_REFRESH_MS` (150 ms) — whether a
+faster blink still holds was not tested.
+
 ### Two ways to drive — and why both are needed
 
 The combined drive frame on port `0x36` sets a **speed**. The hub regulates
@@ -267,6 +274,31 @@ Queried with the serial command `n` (Port Mode Information):
 | `0x38` | `GRV` | 3 (int16) |
 | `0x39` | `ROT` | 3 (int16) |
 | `0x3A` | `POS` | 3 (int16) |
+
+### The launch jerk cannot be reached from the setpoint
+
+Measured on 2026-08-29. On a low speed step the car pulls away with a jerk,
+and the setpoint turns out not to be the lever:
+
+- **Smoothing the setpoint does not remove the jerk, it trades it for dead
+  time.** A ramp on the setpoint (tried at 500 and 2000 ms) does soften the
+  launch — but it puts a delay between the trigger and the car. Press, and for
+  a moment nothing happens; and while the car is not yet rolling, steering
+  changes nothing either, so the whole vehicle feels sluggish. Unusable on the
+  road, and worse than the jerk it cures. The ramp was removed for this reason
+  and should not be brought back.
+- **The jerk does not scale with the size of the setpoint.** With no ramp at
+  all, the smallest trigger movement that clears the deadzone already produces
+  it. The VM's speed controller answers any deviation from standstill with
+  power, however small the request was.
+
+Together these two rule out the whole setpoint path — an expo curve on the
+throttle included, because that only changes which setpoint a given trigger
+position asks for.
+
+**Port `0x36` has exactly one mode.** `requestModeInfo` asks for modes 0 to 7;
+only mode 0 (`PLAYVM`) answers. There is no alternative mode to switch to, so
+the two unused payload bytes below are the only remaining lead on this port.
 
 ### Open thread: PLAYVM declares eight datasets
 

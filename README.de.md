@@ -126,7 +126,7 @@ Nach dem Einschalten ist die Brücke **immer entschärft**. Das Auto fährt nie
 von selbst los.
 
 Die seriellen Befehle zum Nachjustieren ohne Neuflashen listet `?` im Monitor
-auf; `m`, `s` und `t` liegen im Flash und überleben ein Firmware-Update.
+auf; `m` und `s` liegen im Flash und überleben ein Firmware-Update.
 
 ## Was man wissen sollte
 
@@ -135,7 +135,7 @@ Not-Aus über B ebenso wie beim Verlust des Controllers. Das macht einen
 Funkabriss deutlich gutmütiger: Das Auto bremst, statt weiterzurollen.
 
 **Den Hub fahren lassen.** Der kombinierte Fahr-Frame gibt dem Hub eine
-*Geschwindigkeit* vor, seine VM regelt darauf und fährt dabei sanft an. Drei
+*Geschwindigkeit* vor, seine VM regelt darauf und fährt dabei sanft an. Vier
 Funktionen, die diese Arbeit noch einmal gemacht haben, wurden gebaut und
 wieder entfernt:
 
@@ -149,12 +149,15 @@ wieder entfernt:
 - **Eine eigene Beschleunigungsrampe** zusätzlich zu der der VM. Zwei Rampen
   hintereinander ergaben einen sichtbar zweistufigen Antritt und Nachlauf
   beim Loslassen.
+- **Eine Rampe auf den *Sollwert*** — die letzte, die ging, und die mit dem
+  größten Reiz, sie wieder einzubauen. Sie hielt die Regelabweichung des
+  VM-Geschwindigkeitsreglers beim Anfahren klein, und die niedrigen Stufen
+  fuhren dadurch tatsächlich weicher an. Sie legte aber auch eine Verzögerung
+  zwischen Trigger und Auto, und die ist beim Fahren schlimmer als ein harter
+  Antritt.
 
-Geblieben ist eine einzige Rampe auf den *Sollwert*, einstellbar mit `t<ms>`.
-Sie hat genau einen Zweck: Bittet man den Geschwindigkeitsregler der VM aus
-dem Stand um 25 von 100, ist die Regelabweichung groß und er antwortet mit
-Leistung. Ein ansteigender Sollwert hält den Antritt weich. `t0` schaltet sie
-ab.
+Den Sollwert glättet nichts mehr. Der Triggerwert geht so, wie er ist, in den
+Fahr-Frame; die einzige Rampe im System ist die des Hubs.
 
 **Ladeanzeige (VIEW).** Der Akkustand des Hubs als Zeiger, der einmal um den
 Lichtkranz läuft — Start an der linken Flanke, wachsend gegen den
@@ -318,9 +321,10 @@ Drei Eigenschaften sind Absicht und sollten in jedem Fork erhalten bleiben:
 
 - **Startzustand ist entschärft.** Das Auto fährt beim Einschalten nie los.
 - **Scharfschalten wird verweigert, solange die Trigger gedrückt sind.**
-- **Die Failsafe umgeht die Beschleunigungsrampe** und zieht die
+- **Die Failsafe setzt den Sollwert sofort auf null** und zieht die
   Feststellbremse an. Ein verlorener Controller darf nicht über eine halbe
-  Sekunde ausschleichen.
+  Sekunde ausschleichen — einer der Gründe, warum den Sollwert nichts mehr
+  glättet.
 
 Die Absicherung ist gestaffelt, und die Stufen unterscheiden sich stark im
 Tempo:

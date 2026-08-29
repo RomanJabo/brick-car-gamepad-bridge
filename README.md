@@ -122,7 +122,7 @@ After power-up the bridge is **always disarmed**. The vehicle never drives off
 by itself.
 
 Serial commands for tuning without reflashing are listed with `?` in the
-monitor; `m`, `s` and `t` are stored in flash and survive a firmware update.
+monitor; `m` and `s` are stored in flash and survive a firmware update.
 
 ## Features worth knowing about
 
@@ -131,7 +131,7 @@ stop on B and for losing the controller alike. That makes a radio dropout much
 gentler: the car brakes instead of rolling on.
 
 **Let the hub do the driving.** The combined drive frame asks the hub for a
-*speed* and its VM regulates towards it, ramping up gently on the way. Three
+*speed* and its VM regulates towards it, ramping up gently on the way. Four
 features that duplicated that work have been built and removed again:
 
 - **Direct motor commands** ("power mode", what the Control+ app's power
@@ -142,11 +142,14 @@ features that duplicated that work have been built and removed again:
   drive frame sorts the rotation out internally.
 - **An acceleration ramp of our own**, on top of the VM's. Two ramps in series
   gave a visibly two-stage launch and lag on release.
+- **A ramp on the *setpoint*** — the last one to go, and the most tempting to
+  rebuild. It kept the VM's speed controller from seeing a large error at the
+  launch, and the low steps did pull away more gently for it. But it also put
+  a delay between the trigger and the car, and on the road that delay is
+  worse to drive than a hard launch.
 
-What is left is a single ramp on the *setpoint*, adjustable with `t<ms>`,
-which exists for one reason: asking the VM's speed controller for 25 out of
-100 from a standstill is a large error and it answers with plenty of power.
-Feeding it a rising setpoint keeps the launch smooth. `t0` switches it off.
+Nothing smooths the setpoint any more. The trigger value goes into the drive
+frame as it stands, and the only ramp left in the system is the hub's own.
 
 **Charge gauge (VIEW).** The hub's battery level as a dial running once around
 the light ring, starting at the left flank and growing anti-clockwise — so
@@ -300,8 +303,9 @@ Three properties are deliberate and should be preserved in any fork:
 
 - **Boot state is disarmed.** The vehicle never drives off on power-up.
 - **Arming is refused while the triggers are pressed.**
-- **The failsafe bypasses the acceleration ramp** and engages the parking
-  brake. Losing the controller must not ease off over half a second.
+- **The failsafe drops the setpoint to zero at once** and engages the parking
+  brake. Losing the controller must not ease off over half a second — which is
+  one of the reasons nothing smooths the setpoint any more.
 
 Protection is layered, and the layers are very different in speed:
 

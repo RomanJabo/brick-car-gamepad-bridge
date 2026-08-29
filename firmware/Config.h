@@ -36,18 +36,12 @@ static const uint32_t STATUS_INTERVAL_MS = 500;  // 2 Hz status line
 // after pressing RB twice. For something tamer, put 30 back here.
 static const int8_t DEFAULT_MAX_SPEED = 100;  // [RT] full protocol range
 static const int8_t DEFAULT_MAX_STEER = 100;  // [RT] protocol maximum
-// Time from standstill to the speed step in force, in ms. [RT] with 't<ms>',
-// and 0 switches the ramp off.
+// There is deliberately NO acceleration ramp here.
 //
-// It smooths the SETPOINT, which is the point: the VM runs a speed controller,
-// and asking it for 25 out of 100 from a standstill is a large error that it
-// answers with plenty of power — hence the hard launch on the low steps,
-// followed by slow steady running. A rising setpoint keeps that error small.
-//
-// The ramp scales with the selected step, so every step feels the same. Coming
-// back down uses a third of this time: it is there to spare the gearbox on the
-// way up, not to keep the car pulling after the trigger is released.
-static const uint16_t DEFAULT_RAMP_MS = 500;
+// One used to sit on the setpoint. It was removed on 2026-08-29 after a test
+// drive and must not come back: any smoothing of the setpoint puts a delay
+// between the trigger and the car, and that delay is worse to drive than a
+// hard launch. Smoothing the drive is the VM's job — it runs its own ramp.
 
 static const int8_t PROTOCOL_LIMIT = 100;  // hard limit of the LWP3 frame
 
@@ -72,7 +66,24 @@ static const float STEER_EXPO       = 0.30f;  // 0 = linear, 1 = softest around 
 //
 // The 42176's own light program only uses 2, 3, 5 and 6. LED 1 and 4 are free
 // and are used here as turn indicators.
-static const uint32_t BLINKER_PERIOD_MS = 400;  // 400 ms on, 400 ms off
+static const uint32_t BLINKER_PERIOD_MS = 550;  // 550 ms on, 550 ms off
+
+// How long the indicator's wave takes to run from the tail to the nose. For
+// the rest of the on-phase all three lamps stand still at full brightness.
+//
+// The hold is the point. Spread over the whole phase, the front lamp reaches
+// full brightness in the very moment everything drops again — on the car it
+// reads as if the front barely lights at all.
+static const uint32_t BLINKER_SWEEP_MS = 250;
+
+// Headlight flash on the right stick click: half-period of the blink.
+//
+// This goes over the LED array, not the drive frame's light bit, because that
+// bit switches all six lamps together (see MoveHub.h) — and a headlight flash
+// that blinks the tail lights too is not a headlight flash. The price: it
+// cannot be quicker than LED_REFRESH_MS, because the hub's own light program
+// repaints those lamps and our value only stands until it does.
+static const uint32_t HEADLIGHT_FLASH_MS = 200;
 
 // Self-cancelling indicators, as in a real car: the wheel must first be
 // turned into the indicated direction (CANCEL_ANGLE), then returning to

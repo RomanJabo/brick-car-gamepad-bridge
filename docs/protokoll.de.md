@@ -92,6 +92,13 @@ Quellen für das Maskenformat:
 [toorisrael/LEGO-Porsche-Controller](https://github.com/toorisrael/LEGO-Porsche-Controller)
 (Befehl `getledmask`), bestätigt durch die eigene Modusabfrage.
 
+**Eine über das LED-Array gesetzte Vorgabe setzt sich gegen das Lichtprogramm
+durch**, solange sie wiederholt wird. Am 2026-08-29 mit der Lichthupe belegt:
+Sie blinkt LED 2 und 3 mit 200 ms Halbperiode über diesen Weg, während die VM
+dieselben Lampen im 20-Hz-Takt neu malt — sauber, ohne Flackern. 200 ms liegt
+deutlich über `LED_REFRESH_MS` (150 ms); ob ein schnelleres Blinken noch
+durchkommt, wurde nicht geprüft.
+
 ### Vollständige Portliste dieses Hubs
 
 Vom Hub selbst gemeldet (Hub Attached I/O) plus Port Information Request:
@@ -275,6 +282,33 @@ oben korrigierten Irrtum, die LEDs seien nicht ansteuerbar.
 
 Zusätzlich abgefragt: `0x38` heißt `GRV`, `0x39` heißt `ROT`, `0x3A` heißt
 `POS` — jeweils drei int16-Werte.
+
+### An den Ruck beim Anfahren kommt man über den Sollwert nicht heran
+
+Gemessen am 2026-08-29. Auf einer niedrigen Leistungsstufe fährt das Auto
+ruckartig an, und der Sollwert ist dabei nicht der Hebel:
+
+- **Den Sollwert zu glätten beseitigt den Ruck nicht, es tauscht ihn gegen
+  Totzeit.** Eine Rampe auf den Sollwert (bei 500 und bei 2000 ms probiert)
+  macht den Antritt tatsächlich weicher — sie legt aber eine Verzögerung
+  zwischen Trigger und Auto. Man drückt, und einen Moment lang passiert
+  nichts; und solange das Auto noch nicht rollt, ändert auch Lenken nichts,
+  wodurch das ganze Fahrzeug träge wirkt. Beim Fahren unbrauchbar und
+  schlimmer als der Ruck, den sie heilt. Die Rampe wurde deshalb entfernt und
+  sollte nicht zurückkommen.
+- **Der Ruck hängt nicht von der Höhe des Sollwerts ab.** Ganz ohne Rampe
+  erzeugt ihn schon die kleinste Triggerbewegung, die aus der Totzone
+  herauskommt. Der Geschwindigkeitsregler der VM antwortet auf jede Abweichung
+  aus dem Stand mit Leistung, wie klein die Anforderung auch war.
+
+Zusammen schließen diese beiden den gesamten Sollwert-Weg aus — eine
+Expo-Kennlinie auf dem Gastrigger eingeschlossen, denn die ändert nur, welchen
+Sollwert eine gegebene Triggerstellung anfordert.
+
+**Port `0x36` hat genau einen Modus.** `requestModeInfo` fragt die Modi 0 bis 7
+ab; geantwortet hat allein Modus 0 (`PLAYVM`). Es gibt keinen anderen Modus,
+auf den man ausweichen könnte — damit sind die zwei ungenutzten Nutzbytes
+weiter unten die einzige verbliebene Spur an diesem Port.
 
 ### Offener Faden: PLAYVM erwartet acht Datensätze
 

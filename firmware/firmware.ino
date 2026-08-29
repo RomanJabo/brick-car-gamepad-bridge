@@ -55,11 +55,6 @@ static int8_t  maxSpeed     = DEFAULT_MAX_SPEED;
 static int8_t  maxSteer     = DEFAULT_MAX_STEER;
 static uint8_t speedStep    = DEFAULT_SPEED_STEP;
 
-// Time from standstill to the selected speed step. Scaled to that step, so
-// 25 % accelerates with the same character as 100 %. Runtime-settable with
-// 't<ms>' because how it should feel is a matter of taste, not of physics —
-// 0 switches the ramp off entirely.
-static uint16_t rampMs = DEFAULT_RAMP_MS;
 static uint8_t lightMode    = HubLights::LIGHTS_ON;
 
 // Crossed light guides — also a property of the build, see Config.h.
@@ -147,7 +142,6 @@ static void loadSettings() {
   prefs.begin(PREFS_NAMESPACE, true);
   maxSpeed       = prefs.getChar("maxSpeed", DEFAULT_MAX_SPEED);
   maxSteer       = prefs.getChar("maxSteer", DEFAULT_MAX_STEER);
-  rampMs         = prefs.getUShort("rampMs", DEFAULT_RAMP_MS);
   swapFrontLeds  = prefs.getBool("swapF", SWAP_FRONT_LEDS);
   swapRearLeds   = prefs.getBool("swapR", SWAP_REAR_LEDS);
   bootCount      = prefs.getUInt("boots", 0);
@@ -166,7 +160,6 @@ static void saveSettings() {
   prefs.begin(PREFS_NAMESPACE, false);
   prefs.putChar("maxSpeed", maxSpeed);
   prefs.putChar("maxSteer", maxSteer);
-  prefs.putUShort("rampMs", rampMs);
   prefs.putBool("swapF", swapFrontLeds);
   prefs.putBool("swapR", swapRearLeds);
   prefs.putUInt("boots", bootCount);
@@ -221,8 +214,7 @@ static const char* resetReasonName() {
 }
 
 static void printSettings() {
-  Serial.printf("[cfg] m%d  s%d  ramp %ums\n", (int)maxSpeed, (int)maxSteer,
-                (unsigned)rampMs);
+  Serial.printf("[cfg] m%d  s%d\n", (int)maxSpeed, (int)maxSteer);
   Serial.printf("[cfg] light guides: front %s, rear %s\n",
                 swapFrontLeds ? "crossed" : "straight",
                 swapRearLeds ? "crossed" : "straight");
@@ -236,7 +228,6 @@ static void resetSettings() {
   prefs.end();
   maxSpeed       = DEFAULT_MAX_SPEED;
   maxSteer       = DEFAULT_MAX_STEER;
-  rampMs         = DEFAULT_RAMP_MS;
   swapFrontLeds  = SWAP_FRONT_LEDS;
   swapRearLeds   = SWAP_REAR_LEDS;
   Serial.println("[cfg] reset to factory defaults");
@@ -350,8 +341,6 @@ static void printHelp() {
   Serial.println("  m<n>    workshop limit (1..100). The effective cap is");
   Serial.println("          m-value x speed step (LB/RB) = vmax");
   Serial.println("  s<n>    maximum steering angle (1..100)");
-  Serial.println("  t<ms>   acceleration ramp, 50..3000. t0 = off (raw trigger).");
-  Serial.println("          Smaller = more direct, larger = gentler launch.");
   Serial.println("  v       show stored settings");
   Serial.println("  r       reset settings to factory defaults");
   Serial.println("  o       query the hub's ports (what is built in?)");
@@ -485,21 +474,6 @@ static void handleSerial() {
         }
         break;
 
-      case 't':
-        if (arg == 0 || (arg >= 50 && arg <= 3000)) {
-          rampMs = (uint16_t)arg;
-          saveSettings();
-          if (rampMs == 0) {
-            Serial.println("[cfg] acceleration ramp OFF (stored) - trigger goes");
-            Serial.println("      straight through, the hub's VM smooths it.");
-          } else {
-            Serial.printf("[cfg] acceleration ramp = %u ms to the selected step,\n", rampMs);
-            Serial.printf("      %u ms back down (stored)\n", (unsigned)(rampMs / 3));
-          }
-        } else {
-          Serial.println("[!] range 50..3000 ms, or t0 to switch the ramp off.");
-        }
-        break;
 
       case 'x':
         Serial.println("[cfg] deleting all BLE bonds and restarting ...");
@@ -986,6 +960,18 @@ static void ringFromAngle(float ang, float r, uint8_t want[6]) {
   }
 }
 
+// The driving lights as the hub's own light program would paint them. Needed
+// as the backdrop for the headlight flash, which takes over the front pair
+// only and has to leave a sensible picture on the other four lamps.
+static void fillDrivingLights(uint8_t want[6], bool braking) {
+  const bool on = (lightMode == HubLights::LIGHTS_ON);
+
+  want[ledFrontLeft()]  = (uint8_t)(on ? 100 : 0);
+  want[ledFrontRight()] = (uint8_t)(on ? 100 : 0);
+  want[ledRearLeft()]   = (uint8_t)(on ? (braking ? 100 : 30) : 0);
+  want[ledRearRight()]  = (uint8_t)(on ? (braking ? 100 : 30) : 0);
+}
+
 static void updateRingAndBlinkers(XboxControllerNotificationParser& n, int8_t steering,
                                   bool braking) {
   static bool    wasActive = false;
@@ -1012,6 +998,16 @@ static void updateRingAndBlinkers(XboxControllerNotificationParser& n, int8_t st
     active = true;
     const int pct = hub.batteryPercent();
     ringAsGauge((pct < 0) ? 0.0f : (float)pct / 100.0f, isCharging(), want);
+  } else if (blinker == Blinker::Hazard) {
+    // Hazard is not an indicator. It says "I am standing here", not "I am
+    // about to turn" — so it deliberately does NOT sweep: a wave carries a
+    // direction, and direction is the one thing the hazard lights must not
+    // suggest. All six lamps go on and off together.
+    active = true;
+
+    if (millis() % (BLINKER_PERIOD_MS * 2) < BLINKER_PERIOD_MS) {
+      for (int i = 0; i < 6; i++) want[i] = 100;
+    }
   } else if (blinker != Blinker::None) {
     // Sweeping indicator, the way a modern car does it: the lamps along that
     // side light up one after another from the rear towards the front, then
@@ -1024,14 +1020,14 @@ static void updateRingAndBlinkers(XboxControllerNotificationParser& n, int8_t st
 
     const uint32_t cycle = millis() % (BLINKER_PERIOD_MS * 2);
     if (cycle < BLINKER_PERIOD_MS) {
-      // Hazard runs both waves at once, so it needs two sequences.
-      const bool doLeft  = (blinker != Blinker::Right);
-      const bool doRight = (blinker != Blinker::Left);
+      const bool doLeft  = (blinker == Blinker::Left);
+      const bool doRight = (blinker == Blinker::Right);
 
-      // Each lamp fades in over one third of the on-phase, one third apart.
-      // By the end of the phase all three are lit; then everything drops
-      // together, which reads as a wave running forwards.
-      const float segment = (float)BLINKER_PERIOD_MS / 3.0f;
+      // The wave runs inside BLINKER_SWEEP_MS, one lamp per third of it, and
+      // afterwards all three hold at full brightness until the phase ends.
+      // That hold is what makes the front lamp readable — see Config.h.
+      const float sweep   = (float)min(BLINKER_SWEEP_MS, BLINKER_PERIOD_MS);
+      const float segment = sweep / 3.0f;
       for (int k = 0; k < 3; k++) {
         float f = ((float)cycle - (float)k * segment) / segment;
         if (f < 0.0f) f = 0.0f;
@@ -1064,6 +1060,18 @@ static void updateRingAndBlinkers(XboxControllerNotificationParser& n, int8_t st
       active = true;
       ringFromAngle(atan2f(rx, up), r, want);  // 0 = front, +90 degrees = right
     }
+  }
+
+  // Headlight flash, laid over whatever is on the ring: it takes the two front
+  // lamps and leaves the rest of the picture standing underneath. Where there
+  // was no picture, the normal driving lights become the backdrop.
+  if (n.btnRS) {
+    if (!active) fillDrivingLights(want, braking);
+    active = true;
+
+    const bool lit        = ((millis() / HEADLIGHT_FLASH_MS) % 2) != 0;
+    want[ledFrontLeft()]  = (uint8_t)(lit ? 100 : 0);
+    want[ledFrontRight()] = (uint8_t)(lit ? 100 : 0);
   }
 
   if (!active) {
@@ -1226,44 +1234,13 @@ static void tick() {
         cmd = mapTriggers(n.trigRT, n.trigLT, limited);
       }
 
-      // Smooth the SETPOINT, so the VM's speed controller never sees a large
-      // error to chase.
+      // The trigger goes straight through to the hub, unfiltered.
       //
-      // Without this the low speed steps launch hard and then settle: asking
-      // for 25 out of 100 from standstill is a big error, so the controller
-      // gives it plenty until the wheels are turning. Feeding it a rising
-      // setpoint keeps the error small and the launch smooth.
-      //
-      // Kept as a float on purpose. As an integer the step rounded to 1 unit
-      // per tick on the low steps, which is both too coarse to be smooth and
-      // slower than intended.
-      static float ramp = 0.0f;
-
-      const float target = (float)cmd.targetSpeed;
-      if (rampMs == 0 || appState != AppState::Armed || failsafeActive()) {
-        // No ramp when switched off with 't0' — and never one on the way into
-        // the failsafe. The brake already engages instantly, but the setpoint
-        // must not linger either: losing the controller has to mean zero now,
-        // not zero in a fifth of a second.
-        ramp = target;
-      } else {
-        // Never ramp across zero: with the brake engaged the setpoint lags
-        // behind the standing car, and ramping up through the negative range
-        // afterwards is a real reverse command — a short kick backwards.
-        if ((ramp > 0.0f && target < 0.0f) || (ramp < 0.0f && target > 0.0f)) ramp = 0.0f;
-
-        // Releasing is quicker than pulling away: the ramp is there to spare
-        // the gearbox on the way up, not to keep the car going afterwards.
-        const float ms   = (fabsf(target) < fabsf(ramp)) ? (float)rampMs / 3.0f
-                                                         : (float)rampMs;
-        const float step = (float)limited * (float)TICK_INTERVAL_MS / ms;
-
-        float d = target - ramp;
-        if (d > step) d = step;
-        if (d < -step) d = -step;
-        ramp += d;
-      }
-      currentSpeed = (int8_t)lroundf(ramp);
+      // A ramp on the setpoint used to sit here. Removed on 2026-08-29 after a
+      // test drive, and it must NOT come back: smoothing the setpoint puts a
+      // delay between the trigger and the car, and that delay is worse to
+      // drive than a hard launch. Smoothing is the VM's job — it has its own.
+      currentSpeed = cmd.targetSpeed;
 
       // Parking brake: while disarmed the vehicle is held rather than left to
       // coast — that covers the emergency stop on B as well as losing the
@@ -1275,16 +1252,9 @@ static void tick() {
       uint8_t lights = lightMode;
       if (brakeNow) lights |= HubLights::BRAKE;
 
-      // Headlight flash on the right stick click: blinks at 4 Hz so it stands
-      // out even with the lights already on. Only bit 2 is touched, the brake
-      // stays untouched.
-      if (n.btnRS) {
-        if ((millis() / 125) % 2) {
-          lights &= (uint8_t)~HubLights::LIGHTS_OFF;
-        } else {
-          lights |= HubLights::LIGHTS_OFF;
-        }
-      }
+      // The headlight flash is NOT handled here any more. Through the drive
+      // frame it could only blink all six lamps at once — see the light bit in
+      // MoveHub.h. It now runs over the LED array in updateRingAndBlinkers().
 
       hub.sendDrive(brakeNow ? 0 : currentSpeed, steering, lights);
 
