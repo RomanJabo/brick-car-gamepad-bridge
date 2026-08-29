@@ -300,6 +300,30 @@ position asks for.
 only mode 0 (`PLAYVM`) answers. There is no alternative mode to switch to, so
 the two unused payload bytes below are the only remaining lead on this port.
 
+#### What actually happens — observed 2026-08-30
+
+It is not a launch jerk, it is an **overshoot**. From the driver's seat: the car
+accelerates hard, then *rolls on with no drive at all* until it has slowed back
+down to the speed that was asked for. The VM's speed controller answers the
+large error out of standstill with plenty of power, sails past the target, drops
+the drive entirely and lets the car coast back onto it.
+
+Three things were established alongside it:
+
+- **It is direction-dependent.** Reverse pronounced, forward only slight.
+- **It does not depend on the battery.** Identical at 81 % and at 24 %.
+- **A setpoint ramp does not remove it.** 250 ms, upward only, and demonstrably
+  active during the drive — the ramp value was put into the status line for
+  exactly that reason, and read back on all 90 lines of the recording. The
+  overshoot was unchanged, and the sluggish steering feel that had already sunk
+  a 2000 ms ramp turned up at 250 ms as well. Why it appears at a quarter of a
+  second is not understood.
+
+**The Control+ app shows the same overshoot in reverse** and is noticeably
+smoother forwards, where a sudden full-throttle input produces a gradual pull
+with no jolt. So the hub is capable of a smooth launch — nothing found here
+reaches that behaviour.
+
 ### Open thread: PLAYVM declares eight datasets
 
 `PLAYVM` declares **8 datasets**, but our drive frame only fills six:
@@ -317,11 +341,11 @@ try the two extra ones. Put the vehicle on blocks first. Careful: in the lights
 byte, bits `0x08` and `0x10` trigger the steering calibration, so similar side
 effects could hide in the unknown bytes.
 
-That much was done, with the result below. **What is still missing is a run
-under load** — on blocks the wheels spin up so quickly that a change in the
-acceleration would be hard to see at all.
+That was done on blocks first and then repeated on the ground, because with the
+wheels free they spin up so quickly that a change in the acceleration would be
+hard to see at all. Both results are below. **The short version: no effect.**
 
-#### Tried on 2026-08-29 — inconclusive, no warranty
+#### Tried on 2026-08-29 and 2026-08-30 — no effect found, no warranty
 
 > **These are impressions, not measurements.** The only hard numbers below are
 > the frame counters. Read the whole block as *"no result"*, not as *"ruled
@@ -344,9 +368,16 @@ unmodified frame. If one of the bytes set an acceleration time, unloaded wheels
 ought to be the easiest place to see it — which argues against that reading
 without settling it.
 
-**Not tested under load.** The question these two bytes were opened for —
-whether they can soften the launch jerk — needs the car on the ground, and that
-test was not run.
+**Tested under load on 2026-08-30 — no effect.** Repeated on the ground with a
+full pack, on the 25 % and the 50 % speed step, `FF` in byte 7 and `FF` in
+byte 8, launching from standstill at full trigger in both directions. The
+verdict each time was "exactly the same". Together with the sweeps above that
+covers every single bit of byte 7 and both bytes at their maximum, at
+standstill and under load.
+
+**Conclusion: these two bytes do not control acceleration.** The hub accepts
+them and does nothing observable with them. What they are for is still unknown,
+but anyone chasing the launch behaviour can stop here.
 
 **One observation from the same session is unexplained.** After the sweeps the
 vehicle was reported to respond sluggishly *while the probe was switched off*,

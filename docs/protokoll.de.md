@@ -310,6 +310,31 @@ ab; geantwortet hat allein Modus 0 (`PLAYVM`). Es gibt keinen anderen Modus,
 auf den man ausweichen könnte — damit sind die zwei ungenutzten Nutzbytes
 weiter unten die einzige verbliebene Spur an diesem Port.
 
+#### Was tatsächlich passiert — beobachtet am 2026-08-30
+
+Es ist kein Anfahr-Ruck, es ist ein **Überschwinger**. Vom Fahrersitz aus: Das
+Auto beschleunigt ruckartig, *rollt dann völlig antriebslos weiter*, bis es sich
+auf die angeforderte Geschwindigkeit verlangsamt hat. Der Geschwindigkeitsregler
+der VM beantwortet die große Abweichung aus dem Stand mit reichlich Leistung,
+schießt über das Ziel hinaus, nimmt den Antrieb ganz weg und lässt das Fahrzeug
+darauf zurückrollen.
+
+Drei Dinge wurden dabei mitgeklärt:
+
+- **Es hängt von der Richtung ab.** Rückwärts deutlich, vorwärts nur leicht.
+- **Es hängt nicht vom Akku ab.** Bei 81 % identisch wie bei 24 %.
+- **Eine Sollwert-Rampe beseitigt es nicht.** 250 ms, nur bergauf, und
+  nachweislich während der Fahrt aktiv — der Rampenwert wurde genau dafür in die
+  Statuszeile aufgenommen und auf allen 90 Zeilen der Aufzeichnung
+  zurückgelesen. Der Überschwinger blieb unverändert, und das träge Lenkgefühl,
+  an dem schon eine 2000-ms-Rampe gescheitert war, trat auch bei 250 ms auf.
+  Warum es bei einer Viertelsekunde auftritt, ist ungeklärt.
+
+**Die Control+-App zeigt denselben Überschwinger rückwärts** und ist vorwärts
+merklich weicher; ein plötzliches Vollgas ergibt dort einen allmählichen Zug
+ohne Stoß. Der Hub *kann* also weich anfahren — nur reicht nichts von dem, was
+hier gefunden wurde, an dieses Verhalten heran.
+
 ### Offener Faden: PLAYVM erwartet acht Datensätze
 
 `PLAYVM` deklariert **8 Datensätze**, unser Fahr-Frame füllt aber nur sechs:
@@ -328,11 +353,12 @@ Achtung: Im Lights-Byte lösen die Bits `0x08` und `0x10` die
 Lenkungskalibrierung aus — in den unbekannten Bytes könnten ähnliche
 Nebenwirkungen stecken.
 
-So weit ist es gemacht, mit dem Ergebnis unten. **Was fehlt, ist ein Lauf unter
-Last** — aufgebockt drehen die Räder so schnell hoch, dass eine veränderte
-Beschleunigung dort kaum zu erkennen wäre.
+Das ist zuerst aufgebockt und danach auf dem Boden wiederholt worden — bei
+freien Rädern drehen sie so schnell hoch, dass eine veränderte Beschleunigung
+dort kaum zu erkennen wäre. Beide Ergebnisse stehen unten. **Kurzfassung: kein
+Effekt.**
 
-#### Probiert am 2026-08-29 — unklar, ohne Gewähr
+#### Probiert am 2026-08-29 und 2026-08-30 — kein Effekt gefunden, ohne Gewähr
 
 > **Das sind Eindrücke, keine Messungen.** Harte Zahlen sind unten allein die
 > Frame-Zähler. Der ganze Abschnitt ist als *„kein Ergebnis"* zu lesen, nicht
@@ -357,9 +383,16 @@ als der unveränderte Frame. Setzte eines der Bytes eine Beschleunigungszeit,
 müssten unbelastete Räder der leichteste Fall sein, das zu sehen — was gegen
 diese Deutung spricht, sie aber nicht widerlegt.
 
-**Unter Last nicht geprüft.** Die Frage, für die diese zwei Bytes aufgemacht
-wurden — ob sich der Ruck beim Anfahren damit mildern lässt — braucht das Auto
-auf dem Boden, und dieser Test wurde nicht gefahren.
+**Am 2026-08-30 unter Last geprüft — kein Effekt.** Auf dem Boden wiederholt,
+mit vollem Akku, auf der 25-%- und der 50-%-Stufe, `FF` in Byte 7 und `FF` in
+Byte 8, Anfahren aus dem Stand mit vollem Trigger in beide Richtungen. Das
+Urteil war jedes Mal „alles genauso". Zusammen mit den Durchläufen oben sind
+damit sämtliche Einzelbits von Byte 7 und beide Bytes am Anschlag abgedeckt, im
+Stand wie unter Last.
+
+**Schluss: Diese zwei Bytes steuern die Beschleunigung nicht.** Der Hub nimmt
+sie an und tut nichts Erkennbares damit. Wofür sie da sind, bleibt unbekannt —
+wer aber dem Anfahrverhalten nachgeht, kann hier aufhören.
 
 **Eine Beobachtung derselben Sitzung ist ungeklärt.** Nach den Durchläufen
 wurde das Fahrzeug als träge gemeldet, *während die Sonde ausgeschaltet war* —
