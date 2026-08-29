@@ -312,10 +312,47 @@ the two unused payload bytes below are the only remaining lead on this port.
 The reference code in the reverse-engineering repository does not use the two
 missing parameters either — their meaning is unknown.
 
-**Next step, should anyone dig further:** send a 15-byte frame (`0x0F`) with
-eight payload bytes and try the two extra ones. Put the vehicle on blocks
-first. Careful: in the lights byte, bits `0x08` and `0x10` trigger the
-steering calibration, so similar side effects could hide in the unknown bytes.
+**How to probe it:** send a 15-byte frame (`0x0F`) with eight payload bytes and
+try the two extra ones. Put the vehicle on blocks first. Careful: in the lights
+byte, bits `0x08` and `0x10` trigger the steering calibration, so similar side
+effects could hide in the unknown bytes.
+
+That much was done, with the result below. **What is still missing is a run
+under load** — on blocks the wheels spin up so quickly that a change in the
+acceleration would be hard to see at all.
+
+#### Tried on 2026-08-29 — inconclusive, no warranty
+
+> **These are impressions, not measurements.** The only hard numbers below are
+> the frame counters. Read the whole block as *"no result"*, not as *"ruled
+> out"* — and see the unexplained observation at the end, which weakens every
+> subjective judgement in it.
+
+**The hub accepts the full-length frame.** A 15-byte frame (`0x0F`) with both
+extra bytes filled produced no `Generic Error 0x06` and not a single write
+failure, over several thousand frames. Sending eight datasets is evidently no
+format violation — the hub simply never complained about receiving six either.
+
+**No side effect at standstill.** Byte 7 was swept through all eight single
+bits (`01` … `80`) and `FF`, byte 8 through `01`, `08`, `10` and `FF`, and both
+together at `FF FF`. Vehicle on blocks and disarmed throughout: no error, no
+dropped link, no steering calibration, nothing visible on the LEDs.
+
+**No clear effect on the spin-up, wheels free.** Off the ground at full
+throttle, `FF` in the first byte felt at most marginally different from the
+unmodified frame. If one of the bytes set an acceleration time, unloaded wheels
+ought to be the easiest place to see it — which argues against that reading
+without settling it.
+
+**Not tested under load.** The question these two bytes were opened for —
+whether they can soften the launch jerk — needs the car on the ground, and that
+test was not run.
+
+**One observation from the same session is unexplained.** After the sweeps the
+vehicle was reported to respond sluggishly *while the probe was switched off*,
+that is on the plain 13-byte frame. In the same window the hub's battery had
+fallen from 54 % to 22 %. Whether that was the cause was never established.
+Anyone repeating this should start from a full pack and watch the level.
 
 ### Accelerometer — works, and kills the hub
 

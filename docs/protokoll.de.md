@@ -322,11 +322,50 @@ weiter unten die einzige verbliebene Spur an diesem Port.
 Die beiden fehlenden Parameter nutzt auch der Referenzcode aus dem
 Reverse-Engineering-Repo nicht — ihre Bedeutung ist unbekannt.
 
-**Nächster Schritt, falls jemand weitersucht:** Einen 15-Byte-Frame (`0x0F`)
-mit acht Nutzbytes senden und die beiden zusätzlichen durchprobieren. Fahrzeug
-dabei aufbocken. Achtung: Im Lights-Byte lösen die Bits `0x08` und `0x10` die
+**Wie man es untersucht:** Einen 15-Byte-Frame (`0x0F`) mit acht Nutzbytes
+senden und die beiden zusätzlichen durchprobieren. Fahrzeug dabei aufbocken.
+Achtung: Im Lights-Byte lösen die Bits `0x08` und `0x10` die
 Lenkungskalibrierung aus — in den unbekannten Bytes könnten ähnliche
 Nebenwirkungen stecken.
+
+So weit ist es gemacht, mit dem Ergebnis unten. **Was fehlt, ist ein Lauf unter
+Last** — aufgebockt drehen die Räder so schnell hoch, dass eine veränderte
+Beschleunigung dort kaum zu erkennen wäre.
+
+#### Probiert am 2026-08-29 — unklar, ohne Gewähr
+
+> **Das sind Eindrücke, keine Messungen.** Harte Zahlen sind unten allein die
+> Frame-Zähler. Der ganze Abschnitt ist als *„kein Ergebnis"* zu lesen, nicht
+> als *„ausgeschlossen"* — und am Ende steht eine ungeklärte Beobachtung, die
+> jedes subjektive Urteil darin zusätzlich schwächt.
+
+**Der Hub nimmt den Frame in voller Länge an.** Ein 15-Byte-Frame (`0x0F`) mit
+beiden Zusatzbytes erzeugte keinen `Generic Error 0x06` und über mehrere
+tausend Frames keinen einzigen Fehlschlag. Acht Datensätze zu senden ist
+offenbar kein Formatverstoß — der Hub hat sich über sechs allerdings ebenso
+wenig beschwert.
+
+**Keine Nebenwirkung im Stand.** Byte 7 wurde über alle acht Einzelbits
+(`01` … `80`) und `FF` durchgefahren, Byte 8 über `01`, `08`, `10` und `FF`,
+beide zusammen auf `FF FF`. Fahrzeug dabei durchgehend aufgebockt und
+entschärft: kein Fehler, kein Verbindungsabriss, keine Lenkungskalibrierung,
+nichts an den LEDs.
+
+**Kein klarer Einfluss auf den Hochlauf bei freien Rädern.** Aufgebockt und mit
+vollem Trigger fühlte sich `FF` im ersten Byte allenfalls marginal anders an
+als der unveränderte Frame. Setzte eines der Bytes eine Beschleunigungszeit,
+müssten unbelastete Räder der leichteste Fall sein, das zu sehen — was gegen
+diese Deutung spricht, sie aber nicht widerlegt.
+
+**Unter Last nicht geprüft.** Die Frage, für die diese zwei Bytes aufgemacht
+wurden — ob sich der Ruck beim Anfahren damit mildern lässt — braucht das Auto
+auf dem Boden, und dieser Test wurde nicht gefahren.
+
+**Eine Beobachtung derselben Sitzung ist ungeklärt.** Nach den Durchläufen
+wurde das Fahrzeug als träge gemeldet, *während die Sonde ausgeschaltet war* —
+also auf dem normalen 13-Byte-Frame. Im selben Zeitraum war der Akku des Hubs
+von 54 % auf 22 % gefallen. Ob das die Ursache war, wurde nie geklärt. Wer das
+wiederholt, sollte mit vollem Akku beginnen und den Stand im Auge behalten.
 
 ### Beschleunigungssensor — funktioniert und bringt den Hub um
 
