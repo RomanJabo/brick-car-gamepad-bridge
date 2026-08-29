@@ -1,0 +1,76 @@
+name: Something does not work
+description: A fault while driving, connecting, flashing or building.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The most useful thing you can send is the serial output. This firmware
+        keeps a frame log in flash for exactly that reason: the moment of
+        failure is never the moment anybody is watching the console.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: sketch
+    attributes:
+      label: Which sketch
+      options:
+        - firmware
+        - smoketest
+        - it does not compile
+    validations:
+      required: true
+
+  - type: input
+    id: fqbn
+    attributes:
+      label: Board and FQBN
+      description: The exact FQBN you compiled with.
+      placeholder: esp32:esp32:esp32c3:CDCOnBoot=cdc,PartitionScheme=huge_app
+    validations:
+      required: true
+
+  - type: input
+    id: hardware
+    attributes:
+      label: Hub and controller
+      description: Which set, and which controller model.
+      placeholder: 42176 (hub 88019), Xbox Series X|S controller 1914
+    validations:
+      required: true
+
+  - type: textarea
+    id: serial
+    attributes:
+      label: Serial output
+      description: >
+        The status line and any messages around the failure. Please paste text
+        rather than a screenshot, so it can be searched.
+      render: text
+
+  - type: textarea
+    id: frame-log
+    attributes:
+      label: Output of the w command
+      description: >
+        If the hub dropped out, type w in the serial monitor. It prints the last
+        frames sent before the drop, read back from flash, so it still works
+        after a restart.
+      render: text
+
+  - type: checkboxes
+    id: ruled-out
+    attributes:
+      label: Already ruled out
+      options:
+        - label: >
+            The Control+ app was closed. The hub accepts exactly one connection,
+            and the app taking it over looks identical to a crash.
+        - label: The vehicle was up on blocks, if this happened during bring-up.

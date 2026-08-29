@@ -1,0 +1,44 @@
+name: It works on my setup
+description: A report from another model, board or controller.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Everything in this repository was measured on one car with one board.
+        Reports from other setups are the only way that changes, including the
+        ones that say "works, nothing needed adjusting".
+
+  - type: input
+    id: model
+    attributes:
+      label: Model and hub
+      placeholder: 42214, Technic Move Hub 88019
+    validations:
+      required: true
+
+  - type: input
+    id: board
+    attributes:
+      label: Board
+      placeholder: Seeed XIAO ESP32-C3
+    validations:
+      required: true
+
+  - type: input
+    id: controller
+    attributes:
+      label: Controller
+      placeholder: Xbox One S, model 1708
+
+  - type: textarea
+    id: adjusted
+    attributes:
+      label: What needed adjusting
+      description: >
+        The light guides (f / h), the limits m and s, a different FQBN, or
+        nothing at all.
+
+  - type: textarea
+    id: not-working
+    attributes:
+      label: Anything that did not work
