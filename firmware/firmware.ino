@@ -847,10 +847,12 @@ static void emitLeds(const uint8_t want[6]) {
   const bool refresh = (millis() - refreshedAt) >= LED_REFRESH_MS;
   if (refresh) refreshedAt = millis();
 
-  bool needs[6] = {false, false, false, false, false, false};
+  bool changed[6] = {false, false, false, false, false, false};
+  bool needs[6]   = {false, false, false, false, false, false};
   for (int i = 0; i < 6; i++) {
     const bool ownedByVm = (i != LED_MID_LEFT && i != LED_MID_RIGHT);
-    needs[i]             = (want[i] != sent[i]) || (refresh && ownedByVm);
+    changed[i]           = (want[i] != sent[i]);
+    needs[i]             = changed[i] || (refresh && ownedByVm);
   }
 
   // Pick the next pending lamp ROUND ROBIN, not the biggest group.
@@ -859,14 +861,22 @@ static void emitLeds(const uint8_t want[6]) {
   // the largest group is always the dark one, so the dark LEDs would be
   // served on every tick and the bright head of the wave never at all. The
   // cursor makes sure every lamp gets its turn.
+  //
+  // But a lamp whose value actually CHANGED goes before one that only wants
+  // its periodic re-assertion: a repeat can wait a tick, a change cannot.
+  // Without that the headlight flash comes out uneven — the refresh of the
+  // four driving lamps keeps taking the very tick in which the flash wanted
+  // to switch, which costs 50 ms at a time and is plainly visible.
   static uint8_t cursor = 0;
 
   int pick = -1;
-  for (int k = 0; k < 6; k++) {
-    const int i = (cursor + k) % 6;
-    if (needs[i]) {
-      pick = i;
-      break;
+  for (int pass = 0; pass < 2 && pick < 0; pass++) {
+    for (int k = 0; k < 6; k++) {
+      const int i = (cursor + k) % 6;
+      if (pass == 0 ? changed[i] : needs[i]) {
+        pick = i;
+        break;
+      }
     }
   }
   if (pick < 0) return;

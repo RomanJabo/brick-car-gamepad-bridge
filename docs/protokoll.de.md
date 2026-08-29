@@ -94,10 +94,18 @@ Quellen für das Maskenformat:
 
 **Eine über das LED-Array gesetzte Vorgabe setzt sich gegen das Lichtprogramm
 durch**, solange sie wiederholt wird. Am 2026-08-29 mit der Lichthupe belegt:
-Sie blinkt LED 2 und 3 mit 200 ms Halbperiode über diesen Weg, während die VM
-dieselben Lampen im 20-Hz-Takt neu malt — sauber, ohne Flackern. 200 ms liegt
-deutlich über `LED_REFRESH_MS` (150 ms); ob ein schnelleres Blinken noch
-durchkommt, wurde nicht geprüft.
+Sie blinkt LED 2 und 3 über diesen Weg, während die VM dieselben Lampen im
+20-Hz-Takt neu malt.
+
+**Die Grenze ist nicht `LED_REFRESH_MS`, sondern der Tick — aber nur, wenn
+Änderungen Vorrang bekommen.** Mit 200 ms Halbperiode war das Blinken sauber,
+sein Rhythmus aber sichtbar unruhig: Pro Tick geht nur ein LED-Frame raus, und
+eine Lampe, die bloß ihre turnusmäßige Wiederholung wollte, konnte genau den
+Tick belegen, in dem die Lichthupe umschalten wollte — 50 ms Versatz pro Fall.
+Bedient man *geänderte* Lampen vor Wiederholungen, kostet ein Umschalten einen
+einzigen Tick. Seit 2026-08-30 läuft die Lichthupe mit 100 ms Halbperiode,
+deutlich unter `LED_REFRESH_MS` (150 ms), und steht ruhig — das
+Auffrischintervall war also nie die Untergrenze.
 
 ### Vollständige Portliste dieses Hubs
 

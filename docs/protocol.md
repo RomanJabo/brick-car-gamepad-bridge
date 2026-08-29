@@ -187,10 +187,17 @@ Source for the mask format:
 
 **A value written through the LED array wins against the light program**, for
 as long as it keeps being repeated. Confirmed on 2026-08-29 by the headlight
-flash: it blinks LEDs 2 and 3 at 200 ms per half-period over this path while
-the VM repaints the same lamps at 20 Hz, and the result is clean, with no
-flicker. 200 ms sits comfortably above `LED_REFRESH_MS` (150 ms) — whether a
-faster blink still holds was not tested.
+flash, which blinks LEDs 2 and 3 over this path while the VM repaints the same
+lamps at 20 Hz.
+
+**The limit is not `LED_REFRESH_MS`, it is the tick — but only if changes are
+given priority.** At 200 ms per half-period the blink was clean but its rhythm
+audibly stumbled: only one LED frame goes out per tick, and a lamp merely
+wanting its periodic repeat could take the very tick in which the flash wanted
+to switch, costing 50 ms at a time. Serving *changed* lamps before repeats
+fixes that and takes one toggle down to a single tick. The flash runs at 100 ms
+per half-period since 2026-08-30, well under `LED_REFRESH_MS` (150 ms), and is
+steady — so the refresh interval never was the floor.
 
 ### Two ways to drive — and why both are needed
 

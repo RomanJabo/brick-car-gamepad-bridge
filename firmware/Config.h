@@ -80,10 +80,13 @@ static const uint32_t BLINKER_SWEEP_MS = 250;
 //
 // This goes over the LED array, not the drive frame's light bit, because that
 // bit switches all six lamps together (see MoveHub.h) — and a headlight flash
-// that blinks the tail lights too is not a headlight flash. The price: it
-// cannot be quicker than LED_REFRESH_MS, because the hub's own light program
-// repaints those lamps and our value only stands until it does.
-static const uint32_t HEADLIGHT_FLASH_MS = 200;
+// that blinks the tail lights too is not a headlight flash.
+//
+// The floor is the tick, not LED_REFRESH_MS: emitLeds() serves a lamp whose
+// value CHANGED before one that only wants its periodic repeat, so a toggle
+// costs one tick. At 100 ms that is two ticks per state, which is short enough
+// to read as a stab rather than a blink.
+static const uint32_t HEADLIGHT_FLASH_MS = 100;
 
 // Self-cancelling indicators, as in a real car: the wheel must first be
 // turned into the indicated direction (CANCEL_ANGLE), then returning to
