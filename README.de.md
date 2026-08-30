@@ -195,14 +195,20 @@ Fund 5 weiter unten.
 LEGO veröffentlicht das [LEGO Wireless Protocol](https://lego.github.io/lego-ble-wireless-protocol-docs/)
 selbst, und die Community hat darauf aufbauend den Move Hub analysiert. Beim
 Bau dieser Brücke kamen **fünf Punkte zutage, die in der vorhandenen
-Dokumentation falsch stehen oder fehlen**. Alle wurden am Gerät gemessen:
+Dokumentation fehlen oder sich leicht missverstehen lassen**. Alle wurden am
+Gerät gemessen:
 
-**1. Bit 0 im letzten Byte des Fahr-Frames ist die BREMSE, kein Lichtmodus.**
-Die verbreitete Tabelle beschreibt vier „Lichtmodi" (`0x00/0x01/0x04/0x05`).
-Tatsächlich zieht Bit 0 die Bremse an; dass dabei das Bremslicht angeht, ist
-die sichtbare Folge. Behandelt man es als Lichtmodus, fährt das Fahrzeug gar
-nicht mehr, und der Rückwärtsgang scheitert stillschweigend, weil die Bremse
-gegen die negative Geschwindigkeit gewinnt.
+**1. Bit 0 im letzten Byte des Fahr-Frames ist die BREMSE.** Die verbreitete
+Tabelle stellt dieses Byte als vier wählbare „Lichtmodi" dar
+(`0x00/0x01/0x04/0x05`). So gelesen liegt es nahe, einen davon dauerhaft zu
+setzen — und mit gesetztem Bit 0 fährt das Fahrzeug gar nicht mehr, während der
+Rückwärtsgang stillschweigend scheitert, weil die Bremse gegen die negative
+Geschwindigkeit gewinnt. Bit 0 zieht die Bremse an; dass dabei das Bremslicht
+angeht, ist die sichtbare Folge — und genau das beschreibt die Tabelle. Fairerweise
+gesagt: Der Referenzcode dort **benutzt es richtig**, setzt `0x01` nur auf seiner
+Bremstaste und nennt die Konstanten `LIGHTS_ON_BRAKE` / `LIGHTS_OFF_BRAKE`. Die
+Falle liegt darin, die Tabelle als Auswahlliste für Licht zu lesen, nicht in
+ihrem Code.
 
 **2. Nach dem Pairing wirbt der Hub mit der Adresse `00:00:00:00:00:00`.**
 Name und RSSI stimmen, andere Geräte im selben Scan liefern gültige Adressen —

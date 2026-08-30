@@ -11,10 +11,11 @@
 
 // The last byte of the drive frame.
 //
-// CAREFUL — corrected against the hardware: the reverse-engineering source
-// describes this byte as a pure "lights" byte with four modes
-// (0x00/0x01/0x04/0x05). That is misleading. Bit 0 is the BRAKE. The brake
-// light coming on is the visible consequence, not the function.
+// CAREFUL — the reverse-engineering source presents this byte as four
+// selectable "light modes" (0x00/0x01/0x04/0x05), which reads like a menu you
+// can pick from. Bit 0 is the BRAKE; the tail light coming on is the visible
+// consequence, not the function. Their own code uses it that way too, setting
+// it only on the brake key — the trap is in the table, not in their code.
 //
 // Treating bit 0 as a permanent "light mode" stops the vehicle from moving at
 // all, because the brake is then always engaged. It also makes negative speed

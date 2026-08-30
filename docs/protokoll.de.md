@@ -157,13 +157,16 @@ aufrufen: Taucht der Port dann unter „belegt" auf, ist er nutzbar.
 
 ### Das letzte Byte — Bremse und Licht, nicht nur Licht
 
-> **Korrektur gegenüber der Reverse-Engineering-Quelle.** Dort ist dieses Byte
-> als reines Lichtbyte mit vier Modi beschrieben:
+> **In der Reverse-Engineering-Quelle leicht misszuverstehen.** Dort ist dieses
+> Byte als vier wählbare Lichtmodi dargestellt:
 > `0x00` Front+Heck an · `0x01` Front an, Heck beim Bremsen · `0x04` alles aus ·
 > `0x05` Front aus, Heck beim Bremsen.
 >
 > Am Gerät zeigt sich: **Bit 0 ist die Bremse.** Dass dabei das Bremslicht
-> angeht, ist die sichtbare Folge — und genau das hat die Quelle beschrieben.
+> angeht, ist die sichtbare Folge — und genau das beschreibt die Tabelle. Auch
+> der dortige Referenzcode benutzt es richtig und setzt es nur beim Bremsen.
+> Die Falle liegt darin, die Tabelle als Auswahlliste zu lesen und einen der
+> Werte dauerhaft zu halten.
 
 | Bit | Bedeutung |
 |---|---|

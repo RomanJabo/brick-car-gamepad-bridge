@@ -182,14 +182,20 @@ and 2655). It also kills the hub. See finding 5 below.
 
 LEGO publishes the [LEGO Wireless Protocol](https://lego.github.io/lego-ble-wireless-protocol-docs/)
 itself, and the community has reverse-engineered the Move Hub on top of it.
-Building this bridge turned up **five things the existing documentation gets
-wrong or does not cover**. All of them were measured on real hardware:
+Building this bridge turned up **five things the existing documentation does
+not cover, or presents in a way that is easy to misread**. All of them were
+measured on real hardware:
 
-**1. Bit 0 of the drive frame's last byte is the BRAKE, not a light mode.**
-The widely cited table describes four "light modes" (`0x00/0x01/0x04/0x05`).
-In reality bit 0 engages the brake; the brake light coming on is the visible
-consequence. Treating it as a light mode means the vehicle will not move at
-all, and reverse silently fails because the brake beats a negative speed.
+**1. Bit 0 of the drive frame's last byte is the BRAKE.** The widely cited
+table presents this byte as four selectable "light modes"
+(`0x00/0x01/0x04/0x05`). Read that way it is easy to pick one and hold it —
+and with bit 0 held the vehicle will not move at all, while reverse silently
+fails because the brake beats a negative speed. Bit 0 engages the brake; the
+tail light coming on is the visible consequence, which is exactly what the
+table describes. Worth saying plainly: the reference implementation there
+**already uses it correctly**, setting `0x01` only on its brake key and naming
+the constants `LIGHTS_ON_BRAKE` / `LIGHTS_OFF_BRAKE`. The trap is in reading
+the table as a menu of lighting options, not in their code.
 
 **2. After pairing, the hub advertises with the address `00:00:00:00:00:00`.**
 Name and RSSI are correct, other devices in the same scan report valid

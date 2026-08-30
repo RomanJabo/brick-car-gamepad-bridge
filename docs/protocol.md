@@ -71,13 +71,14 @@ the port then shows up as attached, it is usable.
 
 ### The last byte — brake and lights, not just lights
 
-> **Correction to the reverse-engineering source.** There this byte is
-> described as a pure lights byte with four modes: `0x00` front+rear on ·
-> `0x01` front on, rear on braking · `0x04` all off · `0x05` front off, rear on
-> braking.
+> **Easy to misread in the reverse-engineering source.** There this byte is
+> presented as four selectable light modes: `0x00` front+rear on · `0x01` front
+> on, rear on braking · `0x04` all off · `0x05` front off, rear on braking.
 >
-> *Measured:* **bit 0 is the brake.** The brake light coming on is the visible
-> consequence — and that is what the source actually described.
+> *Measured:* **bit 0 is the brake.** The tail light coming on is the visible
+> consequence — which is exactly what the table describes. The reference code
+> there uses it correctly too, setting it only while braking. The trap is in
+> reading the table as a menu of lighting options and holding one of them.
 
 | Bit | Meaning |
 |---|---|
